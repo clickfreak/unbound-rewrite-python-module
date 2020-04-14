@@ -1,11 +1,14 @@
-FROM ubuntu:16.04
+FROM centos:7
 
-RUN apt-get update && \
-    apt-get install unbound python-unbound -y && \
-    chown -R unbound:unbound /etc/unbound/
+RUN yum install strace unbound unbound-libs unbound-python python-libs -y && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+
+USER root:unbound
+RUN /usr/sbin/unbound-control-setup -d /etc/unbound/
 
 USER unbound
-RUN unbound-anchor -a /var/lib/unbound/root.key -v; true
-RUN unbound-control-setup
+RUN /usr/sbin/unbound-anchor -a /var/lib/unbound/root.key -c /etc/unbound/icannbundle.pem; true
 
+USER root
 ENTRYPOINT /usr/sbin/unbound -c /etc/unbound/unbound.conf -d
